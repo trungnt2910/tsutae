@@ -82,7 +82,7 @@ class Client(discord.Client):
         print("Forwarded.")
 
     async def on_ready(self: Self):
-        print(f'Logged on as {self.user}!')
+        print(f"Logged on as {self.user}!")
 
         for channel_id in self.config.channels.keys():
             channel = \
@@ -93,10 +93,11 @@ class Client(discord.Client):
 
             messages = [
                 m async for m in channel.history(
-                    before = datetime.now(),
+                    limit = None,
                     after = datetime.now() - timedelta(hours = self.config.history_age),
                     oldest_first = True
-            ) ]
+                )
+            ]
 
             if len(messages) < self.config.history_limit:
                 messages = [
@@ -105,11 +106,13 @@ class Client(discord.Client):
 
             target_messages = [
                 m async for m in target_channel.history(
-                    before = datetime.now(),
+                    limit = None,
                     after = datetime.now() - timedelta(hours = self.config.history_age),
                     oldest_first = True
                 )
             ]
+
+            print(f"Checking {len(messages)} messages from channel {channel.id} against {len(target_messages)} from {target_channel.id}")
 
             for message in messages:
                 found: bool = False
@@ -120,8 +123,10 @@ class Client(discord.Client):
                         found = True
                         break
                 if not found:
-                    print("A message has not been forwarded. Forwarding it now...")
+                    print(f"Message {message.id} has not been forwarded. Forwarding it now...")
                     await self.__forward(await self.__get_webhook(target_channel), message)
+
+        print("Sync successful.")
 
     async def on_message(self: Self, message: Message):
         if str(message.channel.id) in self.config.channels:
